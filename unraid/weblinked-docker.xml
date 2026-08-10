@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<!--
+  Hand-maintained. stoatworks-unraid registers this app with hasOwnTemplate and
+  copies this file verbatim into its templates/ directory, rewriting only
+  <TemplateURL> so the published copy points at the templates repo. Community
+  Applications never reads this repository directly.
+
+  Every Config block below is a WEBLINKED_* environment variable translated to a
+  command-line flag by docker-entrypoint.sh, because WebLinked itself takes
+  flags and this form takes variables.
+-->
+<Container version="2">
+  <Name>weblinked</Name>
+  <Repository>ghcr.io/stoatworks-labs/weblinked-docker:edge</Repository>
+  <Registry>https://ghcr.io/stoatworks-labs/weblinked-docker</Registry>
+  <Network>host</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/stoatworks-labs/weblinked-docker/issues</Support>
+  <Project>https://github.com/stoatworks-labs/weblinked-docker</Project>
+  <Overview>Renders a web page offscreen at a broadcast raster and exact frame rate and sends it out as NDI. Point it at a Grafana dashboard, a scoreboard, a lower third or a countdown clock and it becomes a video source your vision mixer, decoder or recorder can take.
+
+Chromium renders on the CPU through SwiftShader, so no GPU passthrough is needed. Measured at 50.1 ticks/sec at 1080p50 with zero dropped frames.
+
+IMPORTANT — the NDI runtime is not included and you must supply it. libndi is loaded at run time and its licence does not permit redistribution under MIT, so it cannot be shipped in the image. Download the NDI SDK for Linux from ndi.video, take libndi.so.6 out of lib/x86_64-linux-gnu/, put it in the "NDI runtime" path below, and restart the container. Without it everything still runs and the NDI output simply reports itself unavailable.
+
+This container uses host networking because NDI discovery is mDNS, which Docker's bridge network does not forward. In bridge mode the source is never seen by any receiver and nothing reports an error.
+
+SDI output is not available in a container: DeckLink and AJA need a card and a kernel driver on the host. Syphon and Spout are macOS and Windows only.
+
+The control page is at the WebUI link and is the whole interface — it also accepts HTTP and OSC from Companion or a show-control system.
+
+SECURITY: intended to run purely inside a private network or Tailscale tailnet. The control API has no authentication until you set an API token, and POST /api/script runs arbitrary JavaScript in the rendered page — so an open port here is remote code execution in a browser on your network, not just a feed a stranger can retune. Its security has not been independently reviewed by a human. Host networking puts the control port on every interface this server has, so set the bind address to your tailnet address, set an API token, and never expose it to the public internet.</Overview>
+  <Category>MediaApp:Video Tools:</Category>
+  <WebUI>http://[IP]:7654/</WebUI>
+  <TemplateURL/>
+  <Icon>https://raw.githubusercontent.com/stoatworks-labs/stoatworks-unraid/main/icon.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires>The NDI runtime is not bundled — see the note about libndi above. Everything else works without it.</Requires>
+
+  <Config Name="Page URL" Target="WEBLINKED_URL" Default="https://example.com" Mode="" Description="The page to render. For Grafana, use a public dashboard link and add &amp;kiosk to drop the surrounding UI — an offscreen browser cannot be typed into, so the page must need no login." Type="Variable" Display="always" Required="true" Mask="false">https://example.com</Config>
+
+  <Config Name="Video format" Target="WEBLINKED_FORMAT" Default="1080p50" Mode="" Description="Raster and exact frame rate, for example 1080p50, 720p59.94 or 1920x1080i25. Rates are exact rationals: 59.94 is 60000/1001, not 59.94." Type="Variable" Display="always" Required="true" Mask="false">1080p50</Config>
+
+  <Config Name="NDI source name" Target="WEBLINKED_NDI_NAME" Default="WebLinked" Mode="" Description="The name this appears as on the network. Leave empty to disable the NDI output entirely." Type="Variable" Display="always" Required="false" Mask="false">WebLinked</Config>
+
+  <Config Name="NDI runtime" Target="/opt/ndi/lib" Default="/mnt/user/appdata/weblinked/ndi" Mode="ro" Description="A directory on the host containing libndi.so.6 from the NDI SDK for Linux, which you download and licence yourself. Mounted read-only. If this is empty the container still starts and the NDI output reports itself unavailable." Type="Path" Display="always" Required="false" Mask="false">/mnt/user/appdata/weblinked/ndi</Config>
+
+  <Config Name="Browser cache" Target="/cache" Default="/mnt/user/appdata/weblinked/cache" Mode="rw" Description="Persists cookies and site storage across restarts. Two containers must never share one directory — Chromium locks it, and the second to start will fail." Type="Path" Display="advanced" Required="false" Mask="false">/mnt/user/appdata/weblinked/cache</Config>
+
+  <Config Name="Cache path (in container)" Target="WEBLINKED_CACHE" Default="/cache" Mode="" Description="Tells WebLinked to use the mounted cache directory. Clear this to keep cookies and storage in memory instead, discarded on restart." Type="Variable" Display="advanced" Required="false" Mask="false">/cache</Config>
+
+  <Config Name="Control port" Target="WEBLINKED_PORT" Default="7654" Mode="" Description="HTTP port for the control page and API. On host networking this binds the host directly, so it must not collide with anything else on this server." Type="Variable" Display="advanced" Required="false" Mask="false">7654</Config>
+
+  <Config Name="OSC port" Target="WEBLINKED_OSC_PORT" Default="7655" Mode="" Description="UDP port the OSC receiver listens on, for Companion or a show-control system." Type="Variable" Display="advanced" Required="false" Mask="false">7655</Config>
+
+  <Config Name="Bind address" Target="WEBLINKED_BIND" Default="0.0.0.0" Mode="" Description="Which address the control API listens on. Host networking means the default, 0.0.0.0, is every interface this server has — including the one facing your LAN. Set this to your Tailscale address (100.x.y.z) to make it reachable only through the tailnet. Enabling this container's Tailscale toggle gives it its own address to use here." Type="Variable" Display="always" Required="false" Mask="false">0.0.0.0</Config>
+
+  <Config Name="API token" Target="WEBLINKED_TOKEN" Default="" Mode="" Description="If set, every HTTP request must carry this token. The API is otherwise unauthenticated, and POST /api/script runs arbitrary JavaScript in the page — set this even on a private network." Type="Variable" Display="always" Required="false" Mask="true"/>
+
+  <Config Name="Send alpha" Target="WEBLINKED_ALPHA" Default="false" Mode="" Description="Set to true to send BGRA with the page's alpha channel intact, for a keyed graphic or an overlay. Leave false for a full-frame source such as a dashboard." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+
+  <Config Name="Disable audio" Target="WEBLINKED_NO_AUDIO" Default="false" Mode="" Description="Set to true to ignore the page's audio entirely. A dashboard has none, so this costs nothing either way." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+</Container>

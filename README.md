@@ -1,5 +1,17 @@
 # weblinked-docker
 
+> [!WARNING]
+> **This is designed to run purely inside a [Tailscale](https://tailscale.com) tailnet (or
+> another private network you trust end to end). Do not expose it to the public internet.**
+> The control API has no authentication until you set `--token`, and `POST /api/script`
+> **runs arbitrary JavaScript in the rendered page** — an unauthenticated port here is
+> remote code execution in a browser on your network, not merely a feed someone can
+> retune. Its security has **not** been independently reviewed by a human. This image
+> binds `0.0.0.0` by default and runs with host networking, so it is on every interface
+> the server has. Set `WEBLINKED_BIND` to your tailnet address, set a token, and keep it
+> off the open internet. No reverse proxy, no port forward, no "it's fine, it has a
+> password".
+
 > **AI-assisted project.** This packaging was created with [Claude](https://claude.com/claude-code)
 > (Anthropic), directed and reviewed by a human author. The image has been built
 > and run: it renders real pages headless at 1080p50 with zero dropped ticks, and
@@ -77,6 +89,23 @@ every receiver on the LAN — it does not error, it just never appears. Use
 On host networking the container binds the host's ports directly: **7654/tcp**
 for the control page and API, **7655/udp** for OSC. Change them with `--port`
 and `--osc-port` if something else already has them.
+
+### Keeping it on the tailnet
+
+Host networking means the control port is on **every** interface the server has,
+including whatever faces your LAN. Two things narrow that, and you want both:
+
+- **`WEBLINKED_BIND`** — a literal address to bind, e.g. `100.64.0.5`. Unlike
+  unfuckarr there is no interface-name form: WebLinked's `--bind` takes an
+  address, so use the tailnet IP. Because host networking puts the container in
+  the host's network namespace, the host's `tailscale0` address is directly
+  bindable; Unraid's per-container Tailscale toggle also works.
+- **`WEBLINKED_TOKEN`** — required on every HTTP request once set. Set it even
+  on a tailnet, because `/api/script` is arbitrary code execution in the page.
+
+A container on the default bridge network cannot see the host's `tailscale0` at
+all — but bridge networking breaks NDI discovery anyway, so that combination is
+not one to reach for here.
 
 ## Pointing it at Grafana
 

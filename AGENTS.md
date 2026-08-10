@@ -35,6 +35,22 @@ untouched, which tolerates unknown flags and hands them to CEF.
 mDNS, which Docker's bridge network does not forward. On bridge the sender never
 appears to any receiver and nothing anywhere reports an error.
 
+## 2a. Why the tailnet warning is stronger than it looks
+
+The README and the CA template both carry a private-network-only warning, in the
+same shape as unfuckarr's. It is not boilerplate copied across the fleet: the
+control API is unauthenticated until `--token` is set, and **`POST /api/script`
+executes arbitrary JavaScript in the rendered page**. An exposed control port is
+therefore remote code execution in a browser on the operator's network, which is
+a materially worse failure than "someone changed my dashboard".
+
+Host networking makes this sharper, not softer — it is required for NDI
+discovery, and it puts the port on every interface the host has. `WEBLINKED_BIND`
+is the mitigation and takes an *address*, not an interface name, so unfuckarr's
+`tailscale0` trick does not transfer. Do not weaken either warning, and do not
+default `WEBLINKED_BIND` to anything narrower without checking it still works —
+a bind that fails leaves an operator with no control page and no obvious cause.
+
 ## 3. Traps that cost real time
 
 **The `-dev` packages in the build stage are not there to compile our code.**
