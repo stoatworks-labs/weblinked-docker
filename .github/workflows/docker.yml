@@ -1,0 +1,105 @@
+name: image
+
+# amd64 only, deliberately. This build compiles CEF's wrapper and the whole of
+# WebLinked; under QEMU emulation for arm64 that is hours, for an architecture
+# essentially nobody runs Unraid on. See AGENTS.md §3.
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    # The CEF download and the C++ compile are the slow parts; the default
+    # 360-minute cap is generous but an infinite hang should not eat it.
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # A pull request from a fork has no packages:write, and a PR image has no
+      # business in the registry anyway — it is loaded locally so the smoke
+      # test below can still run against it.
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=edge,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
+
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          load: ${{ github.event_name == 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # A green build only proves the image assembled. The upstream unit suite
+      # already ran as a build step; what it cannot prove is that Chromium
+      # actually initialises headless — which is the entire point of this
+      # image, and which fails at *runtime*, not at build time.
+      - name: Smoke test — does it render with no display?
+        run: |
+          IMAGE="$(echo '${{ steps.meta.outputs.tags }}' | head -1)"
+          docker run -d --name smoke -p 7654:7654 "$IMAGE" \
+            --url https://example.com --format 1080p50
+
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 3 http://127.0.0.1:7654/api/state >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+          STATE="$(curl -fsS --max-time 5 http://127.0.0.1:7654/api/state)" || {
+            echo "::error::the control API never came up"; docker logs smoke | tail -50; exit 1; }
+
+          echo "$STATE" | python3 -c '
+import json, sys
+s = json.load(sys.stdin)
+print("format:", s["format"], "| ticks:", s["pacing"]["ticks"],
+      "| dropped:", s["pacing"]["dropped_ticks"])
+if not s["running"]:
+    sys.exit("the engine is not running")
+# A clock that never ticked means CEF came up but nothing is being driven.
+if s["pacing"]["ticks"] < 1:
+    sys.exit("the clock never ticked")
+# One paint is the initial paint of a static page; zero means it never rendered.
+if s["source"]["paints"] < 1:
+    sys.exit("the browser never painted a frame")
+print("ok: headless render path is alive")
+'
+
+          # The preview is fed by the same frame pipeline as NDI, so a
+          # correctly sized preview buffer is real evidence about the outputs.
+          BYTES="$(curl -fsS --max-time 10 http://127.0.0.1:7654/api/preview | wc -c)"
+          echo "preview bytes: $BYTES"
+          [ "$BYTES" -eq 518400 ] || { echo "::error::expected 480x270 BGRA (518400 bytes)"; exit 1; }
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs smoke 2>&1 | tail -100 || true

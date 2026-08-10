@@ -1,0 +1,5 @@
+# The build context needs nothing but the Dockerfile — the source is cloned
+# inside the builder stage. Keeping the context empty makes `docker build`
+# instant to start rather than uploading the repo.
+*
+!Dockerfile
