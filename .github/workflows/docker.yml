@@ -75,24 +75,13 @@ jobs:
             sleep 2
           done
 
-          STATE="$(curl -fsS --max-time 5 http://127.0.0.1:7654/api/state)" || {
-            echo "::error::the control API never came up"; docker logs smoke | tail -50; exit 1; }
+          curl -fsS --max-time 5 http://127.0.0.1:7654/api/state > state.json || {
+            echo "::error::the control API never came up"
+            docker logs smoke 2>&1 | tail -50
+            exit 1
+          }
 
-          echo "$STATE" | python3 -c '
-import json, sys
-s = json.load(sys.stdin)
-print("format:", s["format"], "| ticks:", s["pacing"]["ticks"],
-      "| dropped:", s["pacing"]["dropped_ticks"])
-if not s["running"]:
-    sys.exit("the engine is not running")
-# A clock that never ticked means CEF came up but nothing is being driven.
-if s["pacing"]["ticks"] < 1:
-    sys.exit("the clock never ticked")
-# One paint is the initial paint of a static page; zero means it never rendered.
-if s["source"]["paints"] < 1:
-    sys.exit("the browser never painted a frame")
-print("ok: headless render path is alive")
-'
+          python3 scripts/smoke_assert.py < state.json
 
           # The preview is fed by the same frame pipeline as NDI, so a
           # correctly sized preview buffer is real evidence about the outputs.

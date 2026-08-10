@@ -3,3 +3,4 @@
 # instant to start rather than uploading the repo.
 *
 !Dockerfile
+!docker-entrypoint.sh

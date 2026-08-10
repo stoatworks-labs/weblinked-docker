@@ -100,6 +100,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /src/build/Release /app
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 WORKDIR /app
 
 # no_sandbox is set in code (src/browser/cef_app.cpp), so the setuid helper is
@@ -116,13 +118,11 @@ EXPOSE 7654/tcp 7655/udp
 HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
   CMD /bin/bash -c 'exec 3<>/dev/tcp/127.0.0.1/7654 && printf "GET /api/state HTTP/1.0\r\n\r\n" >&3 && head -c 15 <&3 | grep -q 200'
 
-# The three switches that make Chromium render with no display: headless ozone,
-# and ANGLE pointed at SwiftShader so it stops trying to open an X connection.
-ENTRYPOINT ["/app/weblinked", \
-            "--ozone-platform=headless", \
-            "--use-gl=angle", "--use-angle=swiftshader", \
-            "--bind", "0.0.0.0", "--no-settings"]
-CMD ["--url", "https://example.com", "--format", "1080p50"]
+# The entrypoint supplies the headless switches and translates WEBLINKED_* env
+# vars into flags, so a container UI with nothing but an environment-variable
+# form can still configure this. Explicit arguments still win over env vars.
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD []
 
 # Host networking is not a convenience here — NDI discovery is mDNS, and a
 # bridge network hides the sender from every receiver on the LAN:
