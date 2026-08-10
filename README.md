@@ -86,6 +86,27 @@ curl -s http://localhost:7654/api/state | grep -o '"compiled_backends":[^]]*]'
 every receiver on the LAN — it does not error, it just never appears. Use
 `--network host`, or run an NDI Discovery Server and point both ends at it.
 
+The same applies to **WebLinked's own advertisement**. From 0.8.0 it publishes
+its control API as `_weblinked._tcp` so rookery and the Companion module can
+find it, and that is mDNS too: on bridge networking it never reaches the LAN.
+It needs three things in this image, and it is worth knowing that missing any
+of them costs you discovery and nothing else — the container runs, and the
+control API works perfectly for anyone who types the address:
+
+- **`--network host`**, as above.
+- **avahi-daemon reachable**, since Linux registration goes through it. This
+  image does not run one; mount the host's socket
+  (`-v /var/run/avahi-daemon/socket:/var/run/avahi-daemon/socket`) and have
+  avahi running on the host.
+- **`WEBLINKED_BIND` not left on loopback.** WebLinked deliberately refuses to
+  advertise while its control API is bound to `127.0.0.1`, because the record
+  would resolve, on every machine that browses, to that machine's own loopback.
+  It logs the reason, and `/api/settings` reports it.
+
+Set `WEBLINKED_MDNS=0` to switch the advertisement off — appropriate where
+multicast is filtered, or where the container is reached only over a tailnet
+and the record would be noise that never arrives.
+
 On host networking the container binds the host's ports directly: **7654/tcp**
 for the control page and API, **7655/udp** for OSC. Change them with `--port`
 and `--osc-port` if something else already has them.
@@ -137,6 +158,14 @@ The ones that matter here:
 | `--port <n>` | Control HTTP port. Default 7654 |
 | `--token <secret>` | Require a token on every HTTP request |
 | `--cache <dir>` | Persist cookies and storage. Give each instance its own |
+| `--name <text>` | What this instance calls itself when it advertises. Default: host and port |
+| `--no-mdns` | Do not advertise over mDNS (see host networking, above) |
+
+The environment variables the entrypoint understands map one to one onto those:
+`WEBLINKED_URL`, `WEBLINKED_FORMAT`, `WEBLINKED_NDI_NAME`, `WEBLINKED_OMT_NAME`,
+`WEBLINKED_PORT`, `WEBLINKED_OSC_PORT`, `WEBLINKED_TOKEN`, `WEBLINKED_CACHE`,
+`WEBLINKED_NAME`, `WEBLINKED_BIND`, `WEBLINKED_ALPHA`, `WEBLINKED_NO_AUDIO`, and
+`WEBLINKED_MDNS=0`.
 
 The entrypoint already supplies `--ozone-platform=headless`, `--use-gl=angle`,
 `--use-angle=swiftshader`, `--bind 0.0.0.0` and `--no-settings`. The first three
