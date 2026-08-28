@@ -1,3 +1,13 @@
+> **AI-assisted project.** This packaging was created with [Claude](https://claude.com/claude-code)
+> (Anthropic), directed and reviewed by a human author. The image has been built
+> and run: it renders real pages headless at 1080p50 with zero dropped ticks, and
+> [WebLinked](https://github.com/stoatworks-labs/weblinked)'s 89-test suite passes
+> inside it — the first time that suite has ever run on Linux. **The NDI output
+> has never been received from this image**, because libndi is not in it and is
+> not ours to ship. Everything below the NDI line is verified; the NDI line
+> itself is not. [What is actually verified](#what-is-actually-verified) is
+> specific about which is which.
+
 # weblinked-docker
 
 > [!WARNING]
@@ -11,16 +21,6 @@
 > the server has. Set `WEBLINKED_BIND` to your tailnet address, set a token, and keep it
 > off the open internet. No reverse proxy, no port forward, no "it's fine, it has a
 > password".
-
-> **AI-assisted project.** This packaging was created with [Claude](https://claude.com/claude-code)
-> (Anthropic), directed and reviewed by a human author. The image has been built
-> and run: it renders real pages headless at 1080p50 with zero dropped ticks, and
-> [WebLinked](https://github.com/stoatworks-labs/weblinked)'s 89-test suite passes
-> inside it — the first time that suite has ever run on Linux. **The NDI output
-> has never been received from this image**, because libndi is not in it and is
-> not ours to ship. Everything below the NDI line is verified; the NDI line
-> itself is not. [What is actually verified](#what-is-actually-verified) is
-> specific about which is which.
 
 **A URL in. NDI out. No display, no card, no desktop.**
 
