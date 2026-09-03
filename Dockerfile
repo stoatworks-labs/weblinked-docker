@@ -75,9 +75,12 @@ RUN cmake --build build -j"$(nproc)"
 # image does not get built, which is the point of running it here.
 RUN ./build/Release/weblinked_tests
 
-# CEF finds its resources next to the executable, and the build leaves the
-# binary one directory above them.
-RUN cp build/weblinked build/Release/weblinked
+# CEF finds its resources next to the executable. Upstream v1.0.2 moved
+# SET_CEF_TARGET_OUT_DIR() above add_executable(weblinked …), so the build now
+# writes the binary straight into build/Release/ and build/weblinked does not
+# exist; refs older than that still leave it one level up. WEBLINKED_REF can
+# select either, so place it only when the build has not already done so.
+RUN test -x build/Release/weblinked || cp build/weblinked build/Release/weblinked
 
 # ---------------------------------------------------------------------------
 # Runtime.

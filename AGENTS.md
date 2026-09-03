@@ -62,11 +62,13 @@ without them. The message reads like a broken CEF distribution and is not.
 does not remove the `-lX11` on the link line, so `libx11-dev` is required in the
 builder and `libx11-6` in the runtime.
 
-**The binary and CEF's resources must end up in the same directory.** The build
-leaves `weblinked` one level above `build/Release/`, where the `.pak` files,
-`icudtl.dat` and `libcef.so` are. CEF finds resources next to the executable, so
-the Dockerfile copies the binary down into `Release/` before the runtime stage
-takes it. Skip that and you get a browser that starts and renders nothing.
+**The binary and CEF's resources must end up in the same directory** — the one
+holding the `.pak` files, `icudtl.dat` and `libcef.so`, which is
+`build/Release/`. Where the build puts `weblinked` depends on the ref: since
+v1.0.2 (`SET_CEF_TARGET_OUT_DIR()` moved above `add_executable`) it is written
+into `build/Release/` directly, and before that it landed one level up. The
+Dockerfile copies it down only if it is not already there, so both refs build.
+Get this wrong and you get a browser that starts and renders nothing.
 
 **The CEF sha1 is pinned here, not upstream.** `cmake/FetchCEF.cmake` only pins
 macosarm64; a Linux build through CMake's own fetch path downloads 315 MB
