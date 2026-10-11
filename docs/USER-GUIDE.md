@@ -2,8 +2,8 @@
 
 > **This guide is superseded.** The packaging moved into
 > [WebLinked](https://github.com/stoatworks-labs/weblinked) on 2026-10-11, and the image is now
-> **`ghcr.io/stoatworks-labs/weblinked:edge`**; `weblinked-docker:edge` keeps getting the same image
-> for now. The current guide is
+> **`ghcr.io/stoatworks-labs/weblinked:edge`**; `weblinked-docker:edge` is frozen at the
+> 22 August 2026 build and no longer updates. The current guide is
 > [docker/README.md](https://github.com/stoatworks-labs/weblinked/blob/main/docker/README.md) —
 > and it corrects one thing below: this image never had mDNS support, so avahi cannot make it
 > discoverable.

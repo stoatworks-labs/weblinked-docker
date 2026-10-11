@@ -5,9 +5,9 @@
 > `main`, `:X.Y.Z` from each release, `:sha-*` per commit. The docs are
 > [docker/README.md](https://github.com/stoatworks-labs/weblinked/blob/main/docker/README.md).
 >
-> **`ghcr.io/stoatworks-labs/weblinked-docker:edge` keeps updating for now**: WebLinked's own
-> workflow pushes the same image to it, so an existing compose file or Unraid template does not
-> break. Move to the new name anyway — the old one stops updating when the transition ends.
+> **`ghcr.io/stoatworks-labs/weblinked-docker:edge` no longer updates.** It is frozen at a build of WebLinked as of 22 August 2026 (just after v1.0.1),
+> and this repository is archived. Change any compose file or Unraid template to
+> `ghcr.io/stoatworks-labs/weblinked:edge`.
 
 > **AI-assisted project.** This packaging was created with [Claude](https://claude.com/claude-code)
 > (Anthropic), directed and reviewed by a human author. **The NDI output has never been received

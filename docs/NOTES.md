@@ -8,9 +8,8 @@ Cross-cutting notes that are not specific to this repo live in
 [fleet-notes](https://github.com/stoatworks-labs/fleet-notes).
 
 **2026-10-11: superseded.** The packaging moved into weblinked (`docker/`); the image is now
-`ghcr.io/stoatworks-labs/weblinked`, and weblinked's workflow also pushes
-`weblinked-docker:edge` for the transition. Commit here with `[skip ci]`, or this repo's
-workflow rebuilds the old Dockerfile over that tag. Two things below were wrong and are
+`ghcr.io/stoatworks-labs/weblinked`. The old `weblinked-docker:edge` is frozen and this
+repository is archived. Two things below were wrong and are
 corrected there: this image was built without avahi headers, so mDNS was a stub whatever was
 mounted; and its healthcheck ignored `WEBLINKED_TOKEN`, so a tokened container showed unhealthy.
 
