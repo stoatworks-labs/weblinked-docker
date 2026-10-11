@@ -1,5 +1,14 @@
 # AGENTS.md — bringing an LLM up to speed on weblinked-docker
 
+> **Superseded, 2026-10-11.** The packaging now lives in WebLinked itself
+> (`docker/`, `.github/workflows/docker.yml`, and §7 of its AGENTS.md), and the
+> image is `ghcr.io/stoatworks-labs/weblinked`. Make packaging changes there, not
+> here. WebLinked's workflow also pushes `weblinked-docker:edge` for the
+> transition — so **commit here with `[skip ci]`**: this repository's own
+> workflow still runs on every push to main and would overwrite that tag with a
+> build of the old Dockerfile below. The rest of this file describes that old
+> Dockerfile.
+
 Orientation for an AI assistant (or a new human) picking this repository up
 cold. It is small — one Dockerfile and its packaging — but three of the
 decisions in it are load-bearing and look arbitrary until you know why.

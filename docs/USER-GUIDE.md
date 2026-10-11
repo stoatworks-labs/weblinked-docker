@@ -1,5 +1,13 @@
 # weblinked-docker user guide
 
+> **This guide is superseded.** The packaging moved into
+> [WebLinked](https://github.com/stoatworks-labs/weblinked) on 2026-10-11, and the image is now
+> **`ghcr.io/stoatworks-labs/weblinked:edge`**; `weblinked-docker:edge` keeps getting the same image
+> for now. The current guide is
+> [docker/README.md](https://github.com/stoatworks-labs/weblinked/blob/main/docker/README.md) —
+> and it corrects one thing below: this image never had mDNS support, so avahi cannot make it
+> discoverable.
+
 **A URL in. NDI out. No display, no card, no desktop.**
 
 [WebLinked](https://github.com/stoatworks-labs/weblinked) renders a web page offscreen at a
